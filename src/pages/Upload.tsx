@@ -5,7 +5,7 @@ import Layout from "@/components/Layout";
 import { Upload as UploadIcon, Image, Film, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-const categories = ["general", "trending", "music", "gaming", "education", "sports", "comedy"];
+const categories = ["general", "trending", "movies", "music", "gaming", "education", "sports", "comedy"];
 
 const UploadPage = () => {
   const navigate = useNavigate();

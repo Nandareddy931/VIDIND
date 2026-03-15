@@ -6,6 +6,7 @@ import VideoPlayer from "@/components/VideoPlayer";
 import LikeButton from "@/components/LikeButton";
 import CommentSection from "@/components/CommentSection";
 import SubscribeButton from "@/components/SubscribeButton";
+import VideoCard from "@/components/VideoCard";
 import { Share2, Eye } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,13 +34,22 @@ const Watch = () => {
             .maybeSingle();
           setChannel(prof);
         }
-        // Fetch suggestions: same category, excluding current
+        // Fetch suggestions: same category preferred, excluding current
         try {
-          let sugQuery = supabase.from("videos").select("*").neq("id", id).order("views", { ascending: false }).limit(12);
-          if (data.category) {
-            sugQuery = sugQuery.eq("category", data.category);
+          const { data: sug } = await supabase
+            .from("videos")
+            .select("*")
+            .neq("id", id)
+            .order("views", { ascending: false })
+            .limit(16);
+            
+          if (sug && data.category) {
+             sug.sort((a, b) => {
+                 if (a.category === data.category && b.category !== data.category) return -1;
+                 if (a.category !== data.category && b.category === data.category) return 1;
+                 return 0;
+             });
           }
-          const { data: sug } = await (sugQuery as any);
           setSuggestions(sug || []);
         } catch (e) {
           console.error("Failed to load suggestions", e);
@@ -85,72 +95,96 @@ const Watch = () => {
 
   return (
     <Layout showHeader={false}>
-      <VideoPlayer src={video.video_url} poster={video.thumbnail_url || undefined} />
+      <div className="flex flex-col lg:flex-row lg:px-6 lg:py-6 gap-6 w-full max-w-[1700px] mx-auto">
+        
+        {/* Main Content Area (Video + Info + Comments) */}
+        <div className="flex-1 min-w-0">
+          <div className="w-full lg:rounded-xl overflow-hidden bg-black aspect-video flex justify-center shadow-md">
+            <div className="w-full h-full">
+              <VideoPlayer src={video.video_url} poster={video.thumbnail_url || undefined} />
+            </div>
+          </div>
 
-      <div className="px-4 py-3 space-y-3">
-        <h1 className="text-base font-bold text-foreground leading-snug">{video.title}</h1>
+          <div className="space-y-4 w-full mt-4 px-4 lg:px-0">
+            <h1 className="text-xl md:text-2xl font-bold text-foreground leading-snug">{video.title}</h1>
 
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" />{video.views} views</span>
-          <span>{new Date(video.created_at).toLocaleDateString()}</span>
-        </div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              {/* Channel info + Subscribe */}
+              {video.user_id && (
+                <div className="flex items-center gap-4">
+                  <Link to={`/channel/${video.user_id}`} className="flex items-center gap-3">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                      {channel?.avatar_url ? (
+                        <img src={channel.avatar_url} className="w-full h-full rounded-full object-cover" alt="" />
+                      ) : (
+                        <span className="text-sm font-bold text-primary">{channelInitial}</span>
+                      )}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-base font-semibold text-foreground truncate">{channelName}</span>
+                      <span className="text-xs text-muted-foreground truncate">Subscriber stats hidden</span>
+                    </div>
+                  </Link>
+                  <div className="ml-2">
+                    <SubscribeButton channelId={video.user_id} />
+                  </div>
+                </div>
+              )}
 
-        {/* Channel info + Subscribe */}
-        {video.user_id && (
-          <div className="flex items-center gap-3 py-2">
-            <Link to={`/channel/${video.user_id}`} className="flex items-center gap-2.5 flex-1 min-w-0">
-              <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                {channel?.avatar_url ? (
-                  <img src={channel.avatar_url} className="w-full h-full rounded-full object-cover" alt="" />
-                ) : (
-                  <span className="text-sm font-bold text-primary">{channelInitial}</span>
+              {/* Actions */}
+              <div className="flex gap-2 items-center">
+                <LikeButton videoId={video.id} />
+                <button
+                  onClick={handleShare}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-secondary text-secondary-foreground text-sm font-medium hover:bg-accent transition-colors"
+                >
+                  <Share2 className="w-4 h-4" />
+                  Share
+                </button>
+              </div>
+            </div>
+
+            {/* Description Box */}
+            <div className="bg-secondary/50 rounded-xl p-3 sm:p-4 hover:bg-secondary/80 transition-colors cursor-pointer mt-4">
+              <div className="flex flex-wrap items-center gap-3 text-sm font-medium text-foreground mb-1">
+                <span>{video.views} views</span>
+                <span>{new Date(video.created_at).toLocaleDateString()}</span>
+                {video.category && (
+                  <span className="text-muted-foreground hover:text-foreground transition-colors uppercase cursor-pointer">
+                    #{video.category}
+                  </span>
                 )}
               </div>
-              <span className="text-sm font-semibold text-foreground truncate">{channelName}</span>
-            </Link>
-            <SubscribeButton channelId={video.user_id} />
+              {video.description && (
+                <p className="text-sm text-foreground whitespace-pre-wrap">{video.description}</p>
+              )}
+            </div>
+
+            {/* Comments */}
+            <div className="pt-4 pb-8">
+              <CommentSection videoId={video.id} />
+            </div>
           </div>
-        )}
-
-        {/* Actions */}
-        <div className="flex gap-2">
-          <LikeButton videoId={video.id} />
-          <button
-            onClick={handleShare}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-secondary text-secondary-foreground text-xs font-medium hover:bg-accent transition-colors"
-          >
-            <Share2 className="w-4 h-4" />
-            Share
-          </button>
         </div>
 
-        {video.description && (
-          <p className="text-sm text-muted-foreground leading-relaxed">{video.description}</p>
-        )}
-
-        {/* Comments */}
-        <div className="border-t border-border pt-4">
-          <CommentSection videoId={video.id} />
-        </div>
-        {/* Suggestions */}
+        {/* Right Sidebar: Suggestions */}
         {suggestions.length > 0 && (
-          <div className="mt-6">
-            <h3 className="text-sm font-semibold text-foreground mb-3">Up next</h3>
+          <div className="lg:w-[350px] xl:w-[400px] flex-shrink-0 px-4 lg:px-0 pb-8">
+            <h3 className="text-lg font-bold text-foreground mb-4">Up next</h3>
             <div className="flex flex-col gap-3">
               {suggestions.map((v) => (
-                <Link key={v.id} to={`/watch/${v.id}`} className="flex items-center gap-3">
-                  <div className="w-36 h-20 bg-secondary rounded-lg overflow-hidden flex-shrink-0">
-                    {v.thumbnail_url ? (
-                      <img src={v.thumbnail_url} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-accent" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-foreground truncate">{v.title}</div>
-                    <div className="text-xs text-muted-foreground mt-1">{v.views || 0} views • {new Date(v.created_at).toLocaleDateString()}</div>
-                  </div>
-                </Link>
+                <VideoCard
+                  key={v.id}
+                  id={v.id}
+                  title={v.title}
+                  thumbnailUrl={v.thumbnail_url}
+                  views={v.views || 0}
+                  createdAt={v.created_at}
+                  category={v.category}
+                  channelId={v.user_id}
+                  duration={v.duration}
+                  layout="list"
+                />
               ))}
             </div>
           </div>

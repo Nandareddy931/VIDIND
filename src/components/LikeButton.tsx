@@ -27,20 +27,23 @@ const LikeButton = ({ videoId }: LikeButtonProps) => {
   }, [videoId, user]);
 
   const fetchLikes = async () => {
-    const { count: total } = await (supabase as any)
-      .from("video_likes")
-      .select("*", { count: "exact", head: true })
-      .eq("video_id", videoId);
-    setCount(total || 0);
-
-    if (user) {
-      const { data } = await (supabase as any)
-        .from("video_likes")
-        .select("id")
-        .eq("video_id", videoId)
-        .eq("user_id", user.id)
+    try {
+      // 1. Fetch current likes count from 'videos' table column 'likes'
+      const { data: videoData } = await (supabase as any)
+        .from("videos")
+        .select("likes")
+        .eq("id", videoId)
         .maybeSingle();
-      setLiked(!!data);
+
+      setCount(videoData?.likes || 0);
+
+      // 2. Fetch user's local liked state
+      if (user) {
+        const storedLikes = JSON.parse(localStorage.getItem(`liked_videos_${user.id}`) || "{}");
+        setLiked(!!storedLikes[videoId]);
+      }
+    } catch (err) {
+      console.error("Error fetching likes:", err);
     }
   };
 
@@ -49,20 +52,38 @@ const LikeButton = ({ videoId }: LikeButtonProps) => {
       toast.error("Sign in to like");
       return;
     }
-    if (liked) {
-      await (supabase as any)
-        .from("video_likes")
-        .delete()
-        .eq("video_id", videoId)
-        .eq("user_id", user.id);
+    
+    // We update UI immediately (Optimistic Update)
+    const storedLikes = JSON.parse(localStorage.getItem(`liked_videos_${user.id}`) || "{}");
+    const isCurrentlyLiked = liked;
+    
+    let newCount = count;
+    
+    if (isCurrentlyLiked) {
+      newCount = Math.max(0, count - 1);
       setLiked(false);
-      setCount((c) => Math.max(0, c - 1));
+      delete storedLikes[videoId];
     } else {
-      await (supabase as any)
-        .from("video_likes")
-        .insert({ video_id: videoId, user_id: user.id });
+      newCount = count + 1;
       setLiked(true);
-      setCount((c) => c + 1);
+      storedLikes[videoId] = true;
+    }
+    
+    setCount(newCount);
+    localStorage.setItem(`liked_videos_${user.id}`, JSON.stringify(storedLikes));
+
+    try {
+      // Update the 'likes' column in the 'videos' table directly:
+      const { error: updateError } = await (supabase as any)
+        .from("videos")
+        .update({ likes: newCount })
+        .eq("id", videoId);
+
+      if (updateError) {
+        console.error("Error updating likes count:", updateError.message);
+      }
+    } catch (error: any) {
+      console.error("Unexpected error updating likes via RPC:", error);
     }
   };
 

@@ -11,6 +11,7 @@ import Settings from "./pages/Settings";
 import SignIn from "./pages/SignIn";
 import Watch from "./pages/Watch";
 import Channel from "./pages/Channel";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/signin" element={<SignIn />} />
           <Route path="/watch/:id" element={<Watch />} />
           <Route path="/channel/:userId" element={<Channel />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

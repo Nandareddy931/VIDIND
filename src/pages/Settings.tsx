@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
-import { User, LogOut, Camera, Save, Loader2, Lock, Bell, Palette, X, FileText, Eye, Trash2, Edit2, Grid3X3, ChevronRight, ArrowLeft } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { User, LogOut, Camera, Save, Loader2, Lock, Bell, Palette, X, FileText, Eye, Trash2, Edit2, Grid3X3, ChevronRight, ArrowLeft, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
@@ -25,6 +26,8 @@ const SettingsPage = () => {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>("account");
   const [loading, setLoading] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   // Profile state
   const [displayName, setDisplayName] = useState("");
@@ -74,6 +77,7 @@ const SettingsPage = () => {
     if (!user) return;
     setProfileLoading(true);
     try {
+      // Fetch profile
       const { data } = await (supabase as any)
         .from("profiles")
         .select("*")
@@ -83,6 +87,32 @@ const SettingsPage = () => {
         setDisplayName(data.display_name || "");
         setBio(data.bio || "");
         setAvatarUrl(data.avatar_url || null);
+      }
+
+      // Fetch user role safely by testing common primary identifier columns one at a time.
+      let roleRes: any = await (supabase as any)
+        .from("user_profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      // If 'id' returned no data (or threw an error if 'id' column doesn't exist), try 'user_id'
+      if (roleRes.error || !roleRes.data) {
+        const roleResAlt = await (supabase as any)
+          .from("user_profiles")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+          
+        if (roleResAlt.data || roleResAlt.error) {
+           roleRes = roleResAlt;
+        }
+      }
+      
+      console.log("Supabase Admin Role Check:", roleRes);
+
+      if (roleRes && roleRes.data && roleRes.data.role) {
+         setRole(roleRes.data.role);
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -309,6 +339,25 @@ const SettingsPage = () => {
               </div>
             </button>
           ))}
+          {role === "admin" && (
+            <button
+              onClick={() => navigate("/admin")}
+              className="w-full text-left bg-card rounded-xl border border-border p-4 hover:bg-accent/50 hover:border-primary/50 transition-all group"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4 flex-1">
+                  <div className="p-3 bg-red-500/10 rounded-lg group-hover:bg-red-500/20 transition-colors">
+                    <Shield className="w-6 h-6 text-red-500" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground text-lg">Dashboard</p>
+                    <p className="text-sm text-muted-foreground">Access the Admin Panel to manage platform settings</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
+              </div>
+            </button>
+          )}
         </div>
       </div>
     </div>

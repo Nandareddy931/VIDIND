@@ -12,6 +12,7 @@ const Movies = () => {
       const { data } = await supabase
         .from("videos")
         .select("*")
+        .eq("category", "movies")
         .order("views", { ascending: false });
       setVideos(data || []);
       setLoading(false);
