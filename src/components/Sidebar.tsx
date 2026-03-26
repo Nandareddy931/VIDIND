@@ -31,10 +31,10 @@ const Sidebar = () => {
     <Link
       to={path}
       className={cn(
-        "flex items-center gap-5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
+        "flex items-center gap-4 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 border",
         isActive(path)
-          ? "bg-accent text-foreground"
-          : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+          ? "bg-purple-600/20 text-purple-300 border-purple-500/30 shadow-[0_0_15px_rgba(147,51,234,0.2)] pointer-events-none"
+          : "border-transparent text-gray-400 hover:bg-white/5 hover:text-white hover:border-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:translate-x-1"
       )}
     >
       <Icon className="w-5 h-5 shrink-0" />
@@ -43,16 +43,16 @@ const Sidebar = () => {
   );
 
   return (
-    <aside className="hidden md:flex fixed left-0 top-14 bottom-0 w-[220px] flex-col z-20 bg-background border-r border-border overflow-y-auto py-3 px-2">
+    <aside className="hidden md:flex fixed left-0 top-16 bottom-0 w-[220px] flex-col z-20 bg-black/40 backdrop-blur-xl border-r border-purple-900/50 overflow-y-auto py-3 px-2">
       <div className="flex flex-col gap-0.5">
         {mainItems.map((item) => (
           <NavItem key={item.path} {...item} />
         ))}
       </div>
 
-      <div className="my-3 h-px bg-border" />
+      <div className="my-3 h-px bg-purple-900/30" />
 
-      <p className="px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Explore</p>
+      <p className="px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Explore</p>
       <div className="flex flex-col gap-0.5">
         {exploreItems.map((item) => (
           <NavItem key={item.path} {...item} />
@@ -60,7 +60,7 @@ const Sidebar = () => {
       </div>
 
       <div className="mt-auto pt-3">
-        <div className="h-px bg-border mb-3" />
+        <div className="h-px bg-purple-900/30 mb-3" />
         <div className="flex flex-col gap-0.5">
           {bottomItems.map((item) => (
             <NavItem key={item.path} {...item} />

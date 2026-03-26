@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
 import VideoCard from "@/components/VideoCard";
+import { Play, TrendingUp, BookOpen, Smile, Info } from "lucide-react";
 
 const categories = ["All", "Trending", "Music", "Gaming", "Education", "Sports", "Comedy"];
 
@@ -46,68 +47,71 @@ const Index = () => {
     ? videos.filter((v) => v.title.toLowerCase().includes(search.toLowerCase()))
     : videos;
 
+  const trendingVideos = videos.filter(v => v.category === "trending").slice(0, 4);
+  const learnVideos = videos.filter(v => ['education', 'learn'].includes(v.category?.toLowerCase())).slice(0, 4);
+  const comedyVideos = videos.filter(v => v.category === "comedy").slice(0, 4);
+
   return (
     <Layout onSearch={setSearch} searchValue={search}>
       {/* Category chips */}
-      <div className="flex gap-2 px-4 py-2.5 overflow-x-auto no-scrollbar sticky top-14 z-30 bg-background">
+      <div className="flex gap-3 px-6 py-4 overflow-x-auto no-scrollbar sticky top-[64px] z-30 bg-black/40 backdrop-blur-md border-b border-purple-900/30 shadow-sm">
         {categories.map((cat) => (
           <button
             key={cat}
             onClick={() => {
               setActiveCategory(cat);
-              // update URL to reflect category
               if (cat === "All") {
                 navigate("/", { replace: true });
               } else {
                 navigate(`/?cat=${cat.toLowerCase()}`, { replace: true });
               }
             }}
-            className={`px-4 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${
-              activeCategory === cat
-                ? "bg-foreground text-background"
-                : "bg-secondary text-secondary-foreground hover:bg-accent"
-            }`}
+            className={`px-6 py-2.5 text-sm font-semibold rounded-full whitespace-nowrap transition-all duration-500 backdrop-blur-md border ${activeCategory === cat
+                ? "bg-purple-600/90 text-white border-purple-400 shadow-[0_0_20px_rgba(147,51,234,0.6)]"
+                : "bg-white/5 text-gray-300 border-white/10 hover:bg-white/10 hover:text-white hover:border-white/30 hover:shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:-translate-y-0.5"
+              }`}
           >
             {cat}
           </button>
         ))}
       </div>
 
-      {/* Video Grid */}
-      <div className="px-0 sm:px-4 md:px-6 lg:px-8 py-2">
+      {/* Main Content Area */}
+      <div className="px-4 sm:px-6 lg:px-8 py-6">
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-y-4 sm:gap-x-4 sm:gap-y-6">
-            {[...Array(8)].map((_, i) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-y-6 sm:gap-x-6">
+            {[...Array(12)].map((_, i) => (
               <div key={i} className="animate-pulse">
-                <div className="aspect-video bg-secondary rounded-xl mb-3" />
+                <div className="aspect-video bg-white/10 rounded-xl mb-3" />
                 <div className="flex gap-3">
-                  <div className="w-9 h-9 rounded-full bg-secondary shrink-0" />
+                  <div className="w-10 h-10 rounded-full bg-white/10 shrink-0" />
                   <div className="flex-1">
-                    <div className="h-4 bg-secondary rounded w-full mb-2" />
-                    <div className="h-3 bg-secondary rounded w-3/4 mb-1.5" />
-                    <div className="h-3 bg-secondary rounded w-1/2" />
+                    <div className="h-4 bg-white/10 rounded w-full mb-2" />
+                    <div className="h-3 bg-white/10 rounded w-3/4 mb-2" />
+                    <div className="h-3 bg-white/10 rounded w-1/2" />
                   </div>
                 </div>
               </div>
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-muted-foreground text-sm">No videos yet. Be the first to upload!</p>
+          <div className="text-center py-24 bg-white/5 rounded-3xl border border-white/10 mx-auto max-w-4xl">
+            <h2 className="text-2xl font-bold mb-3 text-white">No videos found</h2>
+            <p className="text-gray-400">Be the first to upload amazing content!</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-y-4 sm:gap-x-4 sm:gap-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-y-10 sm:gap-x-6">
             {filtered.map((video) => (
-              <VideoCard
-                key={video.id}
-                id={video.id}
-                title={video.title}
-                thumbnailUrl={video.thumbnail_url}
-                views={video.views}
-                createdAt={video.created_at}
-                category={video.category}
-                channelId={video.user_id}
-                duration={video.duration}
+              <VideoCard 
+                key={video.id} 
+                id={video.id} 
+                title={video.title} 
+                thumbnailUrl={video.thumbnail_url} 
+                views={video.views} 
+                createdAt={video.created_at} 
+                category={video.category} 
+                channelId={video.user_id} 
+                duration={video.duration} 
               />
             ))}
           </div>

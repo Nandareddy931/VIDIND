@@ -42,13 +42,13 @@ const Watch = () => {
             .neq("id", id)
             .order("views", { ascending: false })
             .limit(16);
-            
+
           if (sug && data.category) {
-             sug.sort((a, b) => {
-                 if (a.category === data.category && b.category !== data.category) return -1;
-                 if (a.category !== data.category && b.category === data.category) return 1;
-                 return 0;
-             });
+            sug.sort((a, b) => {
+              if (a.category === data.category && b.category !== data.category) return -1;
+              if (a.category !== data.category && b.category === data.category) return 1;
+              return 0;
+            });
           }
           setSuggestions(sug || []);
         } catch (e) {
@@ -96,7 +96,7 @@ const Watch = () => {
   return (
     <Layout showHeader={false}>
       <div className="flex flex-col lg:flex-row lg:px-6 lg:py-6 gap-6 w-full max-w-[1700px] mx-auto">
-        
+
         {/* Main Content Area (Video + Info + Comments) */}
         <div className="flex-1 min-w-0">
           <div className="w-full lg:rounded-xl overflow-hidden bg-black aspect-video flex justify-center shadow-md">
